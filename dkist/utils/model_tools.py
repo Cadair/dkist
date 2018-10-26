@@ -17,7 +17,7 @@ def tree_is_separable(tree):
     Given a tree, convert it to a `CompoundModel` and then return the
     separability of the inputs.
     """
-    return separable.is_separable(tree.evaluate(OPERATORS))
+    return separable.is_separable(tree)
 
 
 def make_tree_input_map(tree):
@@ -42,7 +42,7 @@ def make_tree_input_map(tree):
     tree_input_map = defaultdict(set)
     for i, inp in enumerate(tree.inputs):
 
-        if tree.isleaf or tree.value != "&":
+        if tree.isleaf or tree.op != "&":
             # If the tree is a leaf node then the inputs map to the original tree.
             return {tree: set(tree.inputs)}
 
@@ -62,7 +62,7 @@ def make_forward_input_map(tree):
     branches.
     """
     inp_map = {}
-    assert tree.value == "&"
+    assert tree.op == "&"
     for i, ori_inp in enumerate(tree.inputs):
         if i < len(tree.left.inputs):
             inp_map[ori_inp] = tree.left.inputs[i]
@@ -102,7 +102,7 @@ def remove_input_frame(tree, inp, remove_coupled_trees=False):
     if inp not in tree.inputs:
         return [tree]
 
-    if tree.value != "&":
+    if tree.op != "&":
         # If the input is not a "&" then we have to respect remove_coupled_trees
         sep = tree_is_separable(tree)
         if all(~sep):
@@ -171,7 +171,7 @@ def re_model_trees(trees):
     model : `astropy.modelling.CompoundModel`
         A model.
     """
-    left = trees.pop(0).evaluate(OPERATORS)
+    left = trees.pop(0)
     for right in trees:
-        left = left & right.evaluate(OPERATORS)
+        left = left & right
     return left

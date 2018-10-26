@@ -271,8 +271,8 @@ class GWCSSlicer:
         model = self.gwcs.forward_transform
         axes_to_drop.sort(reverse=True)
         for drop_ax in axes_to_drop:
-            inp = model._tree.inputs[drop_ax]
-            trees = remove_input_frame(model._tree, inp)
+            inp = model.inputs[drop_ax]
+            trees = remove_input_frame(model, inp)
             model = re_model_trees(trees)
 
         if not all([isinstance(a, Identity) for a in prepend]):

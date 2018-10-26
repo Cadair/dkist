@@ -11,7 +11,7 @@ from dkist.utils.model_tools import re_model_trees, remove_input_frame, make_tre
 
 
 def test_input_map(triple_input_flat):
-    ti_map = make_tree_input_map(triple_input_flat._tree)
+    ti_map = make_tree_input_map(triple_input_flat)
     assert len(ti_map) == 2
     assert "x00" in list(ti_map.values())[0]
     assert "x01" in list(ti_map.values())[0]
@@ -19,35 +19,35 @@ def test_input_map(triple_input_flat):
 
 
 def test_not_and(single_non_separable):
-    tree = single_non_separable._tree
+    tree = single_non_separable
     ti = make_tree_input_map(tree)
     assert len(ti) == 1
     assert tree in ti.keys()
 
 
 def test_leaf_map(triple_input_nested):
-    tree = triple_input_nested._tree
+    tree = triple_input_nested
     ti_map = make_tree_input_map(tree)
     assert list(ti_map.keys())[1] is tree.right
-    assert isinstance(list(ti_map.keys())[1].value, Model)
+    assert isinstance(list(ti_map.keys())[1], Model)
 
 
 def test_spatial_imap(spatial_like):
-    tree = spatial_like._tree
+    tree = spatial_like
     trees = make_tree_input_map(tree.left)
     assert len(trees) == 1
     assert len(list(trees.values())[0]) == 2
 
 
 def test_spatial_remove(spatial_like):
-    tree = spatial_like._tree
+    tree = spatial_like
     trees = remove_input_frame(tree, "x01")
     assert len(trees) == 1
     assert len(trees[0].inputs) == 2
 
 
 def test_remove_non_sep(single_non_separable):
-    tree = single_non_separable._tree
+    tree = single_non_separable
     trees = remove_input_frame(tree, "x")
     assert len(trees) == 1
     assert trees[0] is tree
@@ -57,7 +57,7 @@ def test_remove_non_sep(single_non_separable):
 
 
 def test_remove_non_sep_double(double_non_separable):
-    tree = double_non_separable._tree
+    tree = double_non_separable
     trees = remove_input_frame(tree, "x")
     assert len(trees) == 2
     assert trees[0] is tree.left
@@ -69,7 +69,7 @@ def test_remove_non_sep_double(double_non_separable):
 
 
 def test_remove_no_input(single_non_separable):
-    tree = single_non_separable._tree
+    tree = single_non_separable
     trees = remove_input_frame(tree, "x00000")
     assert len(trees) == 1
     assert trees[0] is tree
@@ -77,14 +77,14 @@ def test_remove_no_input(single_non_separable):
 
 def test_remove_frame_flat(triple_input_flat):
     # x0 is the last input
-    trees = remove_input_frame(triple_input_flat._tree, "x0")
+    trees = remove_input_frame(triple_input_flat, "x0")
     assert len(trees) == 1
     assert len(trees[0].inputs) == 2
 
 
 def test_remove_frame_flat_split(triple_input_flat):
     # x0 is the last input
-    trees = remove_input_frame(triple_input_flat._tree, "x01")
+    trees = remove_input_frame(triple_input_flat, "x01")
     assert len(trees) == 2
     assert len(trees[0].inputs) == 1
     assert len(trees[1].inputs) == 1
@@ -92,7 +92,7 @@ def test_remove_frame_flat_split(triple_input_flat):
 
 def test_remove_frame_nested(triple_input_nested):
     # x01 is the second input, therefore splitting the tree
-    trees = remove_input_frame(triple_input_nested._tree, "x01")
+    trees = remove_input_frame(triple_input_nested, "x01")
     assert len(trees) == 2
     assert len(trees[0].inputs) == 1
     assert len(trees[1].inputs) == 1
@@ -100,7 +100,7 @@ def test_remove_frame_nested(triple_input_nested):
 
 def test_re_model_nested(triple_input_nested):
     # x01 is the second input, therefore splitting the tree
-    trees = remove_input_frame(triple_input_nested._tree, "x01")
+    trees = remove_input_frame(triple_input_nested, "x01")
     assert len(trees) == 2
     model = re_model_trees(trees)
     assert isinstance(model, Model)
@@ -112,7 +112,7 @@ def test_drop_one_half_input_tree(spatial_like):
     This test checks that if the input we want to drop is the sole input to one
     half of the original tree, then we drop that half and keep the other.
     """
-    tree = spatial_like._tree
+    tree = spatial_like
     drop_input = "x01"
 
     # Work out based on name which tree we are dropping.
@@ -136,7 +136,7 @@ def test_dont_drop_one_half(spatial_like):
     Test the situation where we are not just dropping one half of the tree.
     """
     spatial_like = spatial_like & Identity(1)
-    tree = spatial_like._tree
+    tree = spatial_like
     ginp_map = make_tree_input_map(tree)
     r_ginp_map = {tuple(v): k for k, v in ginp_map.items()}
 
