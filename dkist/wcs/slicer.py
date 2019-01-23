@@ -6,10 +6,9 @@ from copy import deepcopy
 import numpy as np
 
 import gwcs.coordinate_frames as cf
-from astropy.modeling import Model, Parameter, separable
+from astropy.modeling import Model, separable
 from astropy.modeling.models import Shift, Identity
-
-from dkist.utils.model_tools import re_model_trees, remove_input_frame
+from astropy.modeling.splitting import remove_input_frame
 
 __all__ = ['GWCSSlicer', 'FixedInputs']
 
@@ -306,9 +305,8 @@ class GWCSSlicer:
             skip = not self.separable[drop_ax] if drop_all_non_separable else skip
 
             inp = model._tree.inputs[drop_ax]
-            trees = remove_input_frame(model._tree, inp,
+            model = remove_input_frame(model, inp,
                                        remove_coupled_trees=drop_all_non_separable)
-            model = re_model_trees(trees)
 
 
         if not all([isinstance(a, Identity) for a in prepend]):
