@@ -18,3 +18,6 @@ ds = dkist.dataset.Dataset.from_directory(EIT_DATASET)
 # array object acts like a numpy array, but loads the data from the FITS files
 # on demand. Creating the dataset loads no FITS files.
 print(ds)
+
+
+print(ds[..., 10])

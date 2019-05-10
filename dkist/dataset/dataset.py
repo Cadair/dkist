@@ -8,6 +8,7 @@ import asdf
 import astropy.units as u
 from astropy.utils import isiterable
 from ndcube.ndcube import NDCubeABC
+from astropy.wcs.wcsapi import BaseLowLevelWCS, SlicedLowLevelWCS
 
 from dkist.dataset.mixins import DatasetPlotMixin, DatasetSlicingMixin
 from dkist.io import AstropyFITSLoader, DaskFITSArrayContainer
@@ -74,6 +75,11 @@ class Dataset(DatasetSlicingMixin, DatasetPlotMixin, NDCubeABC):
     def __init__(self, data, uncertainty=None, mask=None, wcs=None,
                  meta=None, unit=None, copy=False, missing_axis=None):
 
+        if not isinstance(wcs, BaseLowLevelWCS):
+            raise ValueError("wcs must be an APE 14 low level WCS object")
+        if not isinstance(wcs, SlicedLowLevelWCS):
+            wcs = SlicedLowLevelWCS(wcs, Ellipsis)
+
         super().__init__(data, uncertainty, mask, wcs, meta, unit, copy)
 
         if self.wcs and missing_axis is None:
@@ -117,33 +123,21 @@ class Dataset(DatasetSlicingMixin, DatasetPlotMixin, NDCubeABC):
                                lazy_load=False, copy_arrays=True) as ff:
                     pointer_array = np.array(ff.tree['data'])
 
-                    array_container = DaskFITSArrayContainer(pointer_array, loader=AstropyFITSLoader,
-                                                            basepath=base_path)
+                    array_container = DaskFITSArrayContainer(pointer_array,
+                                                             loader=AstropyFITSLoader,
+                                                             basepath=base_path)
 
                     data = array_container.array
 
                     wcs = ff.tree['wcs']
 
         except ValidationError as e:
-            raise TypeError(f"This file is not a valid DKIST asdf file, it fails validation with: {e.message}.")
+            raise TypeError(
+                f"This file is not a valid DKIST asdf file, it fails validation with: {e.message}.")
 
         cls = cls(data, wcs=wcs)
         cls.array_container = array_container
         return cls
-
-    @property
-    def pixel_axes_names(self):
-        if self.wcs.input_frame:
-            return self.wcs.input_frame.axes_names[::-1]
-        else:
-            return ('',) * self.data.ndim  # pragma: no cover  # We should never hit this
-
-    @property
-    def world_axes_names(self):
-        if self.wcs.output_frame:
-            return self.wcs.output_frame.axes_names[::-1]
-        else:
-            return ('',) * self.data.ndim  # pragma: no cover  # We should never hit this
 
     @property
     def world_axis_physical_types(self):
@@ -171,12 +165,7 @@ class Dataset(DatasetSlicingMixin, DatasetPlotMixin, NDCubeABC):
         return output
 
     def __str__(self):
-        pnames = ', '.join(self.pixel_axes_names)
-        wnames = ', '.join(self.world_axes_names)
-        return dedent(f"""\
-        {self.data!r}
-        WCS<pixel_axes_names=({pnames}),
-            world_axes_names=({wnames})>""")
+        return f"{self.data!r}\n{self.wcs!r}"
 
     def pixel_to_world(self, *quantity_axis_list):
         """

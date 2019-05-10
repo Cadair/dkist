@@ -82,7 +82,7 @@ def dataset(array, identity_gwcs):
     ds = Dataset(array, wcs=identity_gwcs)
     # Sanity checks
     assert ds.data is array
-    assert ds.wcs is identity_gwcs
+    assert ds.wcs._wcs is identity_gwcs
     return ds
 
 

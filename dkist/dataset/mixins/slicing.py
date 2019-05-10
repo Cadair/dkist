@@ -1,7 +1,6 @@
-import gwcs
+from astropy.wcs.wcsapi import BaseLowLevelWCS, SlicedLowLevelWCS
+from astropy.wcs.wcsapi.sliced_low_level_wcs import sanitize_slices
 from astropy.nddata.mixins.ndslicing import NDSlicingMixin
-
-from dkist.wcs.slicer import GWCSSlicer
 
 __all__ = ['DatasetSlicingMixin']
 
@@ -10,6 +9,7 @@ class DatasetSlicingMixin(NDSlicingMixin):
     """
     A class to override the wcs slicing behavior of `astropy.nddata.mixins.NDSlicingMixin`.
     """
+
     def _slice(self, item):
         """
         Construct a set of keyword arguments to initialise a new (sliced)
@@ -35,8 +35,8 @@ class DatasetSlicingMixin(NDSlicingMixin):
     def _slice_wcs_missing_axes(self, item):
         if self.wcs is None:
             return None, None
-        if isinstance(self.wcs, gwcs.WCS):
-            # Reverse the item so the pixel slice matches the cartesian WCS
-            slicer = GWCSSlicer(self.wcs, copy=True, pixel_order=True)
-            return slicer[item]
-        return self.wcs[item], None  # pragma: no cover
+        elif not isinstance(self.wcs, BaseLowLevelWCS):
+            raise ValueError("wcs must be an APE 14 low level WCS object")
+
+        item = sanitize_slices(item, self.wcs.pixel_n_dim)
+        return SlicedLowLevelWCS(self.wcs, item[::-1]), None
