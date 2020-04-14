@@ -1,5 +1,6 @@
 import os
 import json
+import warnings
 import urllib.parse
 import urllib.request
 from collections import defaultdict
@@ -153,11 +154,19 @@ class DKISTDatasetClient(BaseClient):
         """
         Search for datasets provided by the DKIST data centre.
         """
+        if not self._BASE_URL:
+            raise ValueError("You have not set the search endpoint URL. Set DKIST_DATASET_ENDPOINT env var.")
+
         query = attr.and_(*args)
         queries = walker.create(query)
 
         results = DKISTQueryReponse()
         for url_parameters in queries:
+            if not url_parameters:
+                warnings.warn("A query was provided to the DKIST client without any search parameters.",
+                              Warning)
+                continue
+
             query_string = urllib.parse.urlencode(url_parameters)
 
             full_url = f"{self._BASE_URL}?{query_string}"
