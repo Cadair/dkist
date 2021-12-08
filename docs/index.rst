@@ -1,3 +1,5 @@
+.. _python-tools:
+
 DKIST Python Tools Documentation
 ================================
 
