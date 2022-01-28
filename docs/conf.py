@@ -76,8 +76,9 @@ extensions = [
     'sphinx.ext.viewcode',
     'sunpy.util.sphinx.doctest',
     'sunpy.util.sphinx.generate',
+    'sphinx_remove_toctrees',
 ]
-
+remove_from_toctrees = ["api/*"]
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ['_templates']
 
