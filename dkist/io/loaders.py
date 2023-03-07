@@ -51,7 +51,7 @@ class BaseFITSLoader(metaclass=abc.ABCMeta):
         return "<FITS array in {0.fileuri} shape: {0.shape} dtype: {0.dtype}>".format(self.externalarray)
 
     def __array__(self):
-        return self.fits_array
+        return self[:]
 
     def __getitem__(self, slc):
         return self.fits_array[slc]
@@ -70,19 +70,6 @@ class BaseFITSLoader(metaclass=abc.ABCMeta):
         else:
             return Path(self.externalarray.fileuri)
 
-    @property
-    def fits_array(self):
-        """
-        The FITS array object.
-        """
-        return self._read_fits_array()
-
-    @abc.abstractmethod
-    def _read_fits_array(self):
-        """
-        Read and return a reference to the FITS array.
-        """
-
 
 @add_common_docstring(append=common_parameters)
 class AstropyFITSLoader(BaseFITSLoader):
@@ -90,18 +77,21 @@ class AstropyFITSLoader(BaseFITSLoader):
     Resolve an `~asdf.ExternalArrayReference` to a FITS file using `astropy.io.fits`.
     """
 
-    def _read_fits_array(self):
+    def __getitem__(self, slc):
         if not self.absolute_uri.exists():
             # Use np.broadcast_to to generate an array of the correct size, but
             # which only uses memory for one value.
             return da.from_delayed(delayed(np.broadcast_to)(np.nan, self.shape) * np.nan,
                                    self.shape, self.dtype)
 
+        supports_section = hasattr(fits.CompImageHDU, "section")
         with fits.open(self.absolute_uri,
-                       memmap=True,  # don't load the whole array into memory, let dask access the part it needs
+                       memmap=not supports_section,  # don't load the whole array into memory, let dask access the part it needs
                        do_not_scale_image_data=True,  # don't scale as that would cause it to be loaded into memory
                        mode="denywrite") as hdul:
 
             hdul.verify('fix')
             hdu = hdul[self.externalarray.target]
-            return hdu.data
+            if supports_section:
+                return hdu.section[slc]
+            return hdu.data[slc]
