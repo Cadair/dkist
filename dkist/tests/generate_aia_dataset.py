@@ -12,7 +12,6 @@ from astropy.modeling.models import (AffineTransformation2D, Multiply,
 from astropy.time import Time
 from gwcs import coordinate_frames as cf
 
-import sunpy.map
 from sunpy.net import Fido
 from sunpy.net import attrs as a
 from sunpy.net.jsoc import JSOCClient
@@ -91,12 +90,13 @@ def references_from_filenames(filename_array, relative_to=None):
 
 
 def main():
+    import sunpy
+
     from dkist_inventory.transforms import generate_lookup_table
 
-    path = Path("~/sunpy/data/jsocflare/").expanduser()
-    files = path.glob("*.fits")
+    path = (Path(sunpy.config.get("downloads", "download_dir")) / "jsocflare").expanduser()
+    files = list(path.glob("*.fits"))
 
-    # requestid = 'JSOC_20180831_1097'
     requestid = None
 
     if not files:
@@ -138,7 +138,7 @@ def main():
             start_time = time
         inds.append(i)
         times.append(time)
-        seconds.append((time - start_time).total_seconds())
+        seconds.append((time - start_time).to_value(u.s))
         waves.append(header["WAVELNTH"])
 
     # Construct an array and sort it by wavelength and time
@@ -158,7 +158,7 @@ def main():
     # Extract a list of coordinates in time and wavelength
     # this assumes all wavelength images are taken at the same time
     time_coords = np.array(
-        [t.isoformat() for t in times])[list_sorter].reshape(shape)[0, :]
+        [t.isot for t in times])[list_sorter].reshape(shape)[0, :]
     np.array(waves)[list_sorter].reshape(shape)[:, 0]
 
     smap0 = sunpy.map.Map(files[0])
@@ -171,7 +171,7 @@ def main():
 
     wave_frame = cf.SpectralFrame(axes_order=(3, ), unit=u.AA, name="wavelength", axes_names=("wavelength", ))
     time_frame = cf.TemporalFrame(
-        axes_order=(2, ), unit=u.s, reference_time=Time(time_coords[0]), name="time", axes_names=("time", ))
+        axes_order=(2, ), unit=u.s, reference_frame=Time(time_coords[0]), name="time", axes_names=("time", ))
     sky_frame = cf.CelestialFrame(axes_order=(0, 1), name="helioprojective",
                                   reference_frame=smap0.coordinate_frame,
                                   axes_names=("helioprojective longitude", "helioprojective latitude"))
