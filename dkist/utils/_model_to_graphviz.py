@@ -43,8 +43,11 @@ def model_to_subgraph(model, inputs=None, outputs=None):
         output_labels = [input_labels[i] for i in model._mapping]
 
     label = repr(model)
-    if len(label) > 30:
+    if len(label) > 50:
         label = model.__class__.name
+
+    if model.name and "name" not in label:
+        label += f" ({model.name})"
 
     subgraph = pydot.Subgraph(f"{id(model)}_subgraph", label=label)
     model_node = pydot.Node(name=id(model), label=label, shape="box")
