@@ -41,17 +41,61 @@ import astropy.units as u
 data_path = "/data/dkist/globus/inv.PUYATW/"
 ```
 
+First we can load the dataset in the same way as level 1 datasets:
+
 ```{code-cell} ipython3
 inv = dkist.load_dataset(data_path)
 ```
+
+The object returned is an `Inversion` class:
 
 ```{code-cell} ipython3
 inv
 ```
 
+Unlike the L1 datasets, inversions have keys, which correspond to different physical parameters, each physical parameter is represented by the `dkist.Dataset` object which is the same object used for all Level 1 data.
+
 ```{code-cell} ipython3
-fig = inv.plot(np.s_[:,:,0], figure=plt.figure(figsize=(12,10)), inversions=["temperature"])
-plt.colorbar(label=f"Temperature [{inv['temperature'].unit:latex}]")
+inv["temperature"]
+```
+
+Because each of the physical parameters have the same array dimensions, ndcube says they have "aligned axes", so you can slice all the physical parameters at once:
+
+```{code-cell} ipython3
+small_inv = inv[100:200, 200:300]
+small_inv
+```
+
+```{code-cell} ipython3
+small_inv["temperature"]
+```
+
+Each physical parameter has it's own file manager, the same as level 1
+
+```{code-cell} ipython3
+inv["temperature"].files
+```
+
+However, they all reference different HDUs in the same set of FITS files.
+
+```{code-cell} ipython3
+inv["temperature"].files.filenames
+```
+
+```{code-cell} ipython3
+inv["optical_depth"].files.filenames == inv["temperature"].files.filenames
+```
+
+You can plot a single quantity in the same way as level 1 data:
+
+```{code-cell} ipython3
+fig = plt.figure()
+small_inv["temperature"].plot(fig=fig, plot_axes=["y", "x", None], colorbar=True)
+```
+
+```{code-cell} ipython3
+fig = plt.figure(figsize=(12,10))
+_ = small_inv.plot(np.s_[:,:,0], figure=fig, inversions=["mag_strength", "temperature"])
 ```
 
 Now let's see if we can plot a 1D temperature vs optical depth line for a single spatial pixel:
@@ -71,10 +115,6 @@ Well that doesn't seem right, it doesn't have an x-axis.
 one_pix.axis_world_coords()
 ```
 
-Well that's a list of coords, although why one of them is suddenly -2e-16 I don't know.
-
-+++
-
 ## Profiles
 
 ```{code-cell} ipython3
@@ -86,28 +126,9 @@ inv.profiles["NaID_orig"]
 ```
 
 ```{code-cell} ipython3
-# yes this is horrible
-celestial_frame = inv.profiles["NaID_orig"].wcs.output_frame.frames[2].reference_frame
+inv.plot(0)
 ```
 
 ```{code-cell} ipython3
-inv.profiles["NaID_orig"].wcs.world_to_pixel(
-    StokesCoord(0),
-    SpectralCoord(589.7*u.nm),
-    SkyCoord(350*u.arcsec, 540*u.arcsec, frame=celestial_frame),
-    Time("2024-04-17T20:25:26.704"),
-)
-```
 
-```{code-cell} ipython3
-inv["temperature"]
-```
-
-```{code-cell} ipython3
-inv["temperature"].wcs.world_to_pixel(
-    0*u.pix,  # optical depth
-    SkyCoord(350*u.arcsec, 540*u.arcsec, frame=celestial_frame),  # lon/lat
-    Time("2024-04-17T20:25:26.704"), # time
-    StokesCoord(0),  # Stokes??!
-)
 ```
